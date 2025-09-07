@@ -1,0 +1,31 @@
+services:
+  bd:
+    image: postgres:17-alpine
+    container_name: produtos_favoritos_bd_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${USUARIO_BD}
+      - POSTGRES_PASSWORD=${SENHA_BD}
+      - POSTGRES_DB=${NOME_BD}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${USUARIO_BD} -d ${NOME_BD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    container_name: produtos_favoritos_api_dev
+    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/code
+    env_file:
+      - .env
+    depends_on:
+      bd:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
