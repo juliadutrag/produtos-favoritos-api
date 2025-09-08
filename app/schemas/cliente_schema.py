@@ -7,7 +7,7 @@ class ClienteDadosBasicos(BaseModel):
     nome: str
 
 class ClienteCadastrar(ClienteDadosBasicos):
-    pass
+    senha: str
 
 class ClienteAtualizar(ClienteDadosBasicos):
     pass

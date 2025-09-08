@@ -10,6 +10,9 @@ class Settings(BaseSettings):
 
     TITULO_API: str
 
+    CHAVE_SEGURANCA_JWT: str
+    TEMPO_EXPIRACAO_TOKEN_MINUTOS: int
+
     @property
     def url_bd(self) -> str:
         return f"postgresql+asyncpg://{self.USUARIO_BD}:{self.SENHA_BD}@{self.HOST_BD}:{self.PORTA_BD}/{self.NOME_BD}"

@@ -1,29 +1,14 @@
-import uuid
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
+from fastapi import APIRouter, Depends, status, Response, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.rotas.autenticacao_api import obter_cliente_autorizado
 from app.db.session import get_db
 from app.db.models import Cliente 
 from app.schemas.cliente_schema import ClienteCadastrar, ClienteAtualizar, ClienteDetalhar
 from app.services import cliente_servico
 
 router = APIRouter()
-
-async def recuperar_cliente_ou_404(
-    id: uuid.UUID, db: AsyncSession = Depends(get_db)
-) -> Cliente:
-    """
-    Dependência para obter um cliente pelo ID.
-    Lança HTTPException 404 se o cliente não for encontrado.
-    """
-    cliente = await cliente_servico.recuperar_cliente(db=db, id=id)
-    if cliente is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Não foi encontrado um cliente com o ID informado.",
-        )
-    return cliente
 
 @router.post(
     "/",
@@ -61,7 +46,7 @@ async def listar_clientes(
     summary="Obter detalhes de um cliente",
 )
 async def recuperar_cliente(
-    cliente: Cliente = Depends(recuperar_cliente_ou_404),
+    cliente: Cliente = Depends(obter_cliente_autorizado),
 ) -> ClienteDetalhar:
     """
     Retorna os dados de um cliente específico a partir do seu ID.
@@ -75,14 +60,14 @@ async def recuperar_cliente(
 )
 async def atualizar_cliente(
     cliente_atualizar: ClienteAtualizar,
-    cliente: Cliente = Depends(recuperar_cliente_ou_404),
     db: AsyncSession = Depends(get_db),
+    cliente_autorizado: Cliente = Depends(obter_cliente_autorizado),
 ) -> ClienteDetalhar:
     """
     Atualiza os dados de um cliente existente.
     """
     return await cliente_servico.atualizar_cliente(
-        db=db, cliente=cliente, cliente_atualizar=cliente_atualizar
+        db=db, cliente=cliente_autorizado, cliente_atualizar=cliente_atualizar
     )
 
 @router.delete(
@@ -91,11 +76,11 @@ async def atualizar_cliente(
     summary="Excluir um cliente",
 )
 async def excluir_cliente(
-    cliente: Cliente = Depends(recuperar_cliente_ou_404),
     db: AsyncSession = Depends(get_db),
+    cliente_autorizado: Cliente = Depends(obter_cliente_autorizado),
 ) -> Response:
     """
     Excluir um cliente do sistema.
     """
-    await cliente_servico.excluir_cliente(db=db, cliente=cliente)
+    await cliente_servico.excluir_cliente(db=db, cliente=cliente_autorizado)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
