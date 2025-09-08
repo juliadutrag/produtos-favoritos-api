@@ -1,5 +1,4 @@
 import uuid
-from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
@@ -28,16 +27,6 @@ async def criar_cliente(db: AsyncSession, cliente_cadastrar: ClienteCadastrar) -
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe um cliente registrado com o e-mail fornecido.",
         )
-
-async def listar_clientes(
-    db: AsyncSession, *, skip: int = 0, limit: int = 100
-) -> List[Cliente]:
-    """
-    Retorna uma lista de clientes com paginação.
-    """
-    query = select(Cliente).offset(skip).limit(limit)
-    result = await db.execute(query)
-    return result.scalars().all()
 
 async def recuperar_cliente(db: AsyncSession, id: uuid.UUID) -> Cliente | None:
     """Busca um cliente pelo seu ID."""
