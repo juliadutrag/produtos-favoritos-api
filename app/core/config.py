@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     PORTA_BD: str
 
     TITULO_API: str
+    URL_BASE_API_PRODUTO: str
 
     CHAVE_SEGURANCA_JWT: str
     TEMPO_EXPIRACAO_TOKEN_MINUTOS: int
