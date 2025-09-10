@@ -61,8 +61,11 @@ O projeto foi construído sobre uma arquitetura de camadas (API -> Serviços -> 
 
 Para executar este projeto, você precisará ter instalado em sua máquina:
 
-- Docker
-- Docker Compose
+- **Docker Engine**: Versão `20.10.0` ou superior.
+- **Docker Compose**: Versão `v2.x`
+
+> **Nota:** O projeto utiliza a sintaxe moderna do Docker Compose V2, que suporta funcionalidades como `condition: service_healthy`. Certifique-se de que você está usando a versão correta.
+
 
 ---
 
