@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     HOST_BD: str
     PORTA_BD: str
 
+    HOST_REDIS: str
+    PORTA_REDIS: int
+    CACHE_TTL_SEGUNDOS: int
+
     TITULO_API: str
     URL_BASE_API_PRODUTO: str
 

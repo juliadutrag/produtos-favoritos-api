@@ -1,3 +1,4 @@
+import json
 import time
 from typing import Any
 
@@ -5,6 +6,7 @@ import httpx
 import structlog
 from fastapi import HTTPException, status
 
+from app.core.cache import get_redis_client
 from app.core.config import settings
 
 logger = structlog.get_logger(__name__)
@@ -15,12 +17,24 @@ class ClienteApiProdutos:
     """
     def __init__(self):
         self.url_base = f"{settings.URL_BASE_API_PRODUTO}/products"
+        self.redis_client = get_redis_client()
 
     async def obter_detalhes_produto(self, id_produto: str) -> dict[str, Any] | None:
         """
         Busca os detalhes de um produto específico na API externa.
-        Retorna um dicionário com os dados do produto ou None se não for encontrado.
+        Para melhorar a performance, busca primeiro em um cache Redis
         """
+        cache_key = f"product:{id_produto}"
+        try:
+            cached_product = await self.redis_client.get(cache_key)
+            if cached_product:
+                logger.info("Cache encontrado para produto", product_id=id_produto)
+                return json.loads(cached_product)
+        except Exception:
+            logger.error("Erro ao acessar o cache Redis", exc_info=True)
+
+        logger.info("Cache não encontrado para produto", product_id=id_produto)
+
         url = f"{self.url_base}/{id_produto}/"
         async with httpx.AsyncClient() as client:
             try:
@@ -36,7 +50,16 @@ class ClienteApiProdutos:
                     duration_ms=round(duracao, 2)
                 )
                 if resposta.status_code == 200:
-                    return resposta.json()
+                    dados_produto = resposta.json()
+                    try:
+                        await self.redis_client.set(
+                            cache_key,
+                            json.dumps(dados_produto),
+                            ex=settings.CACHE_TTL_SEGUNDOS
+                        )
+                    except Exception:
+                        logger.error("Erro ao salvar dados no cache Redis", exc_info=True)
+                    return dados_produto
                 elif resposta.status_code == 404:
                     return None
                 else:
