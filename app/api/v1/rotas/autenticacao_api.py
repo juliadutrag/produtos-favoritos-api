@@ -1,7 +1,7 @@
 import uuid
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Path
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -76,7 +76,11 @@ async def obter_cliente_logado(
     return cliente
 
 async def obter_cliente_autorizado(
-    id: uuid.UUID,
+    id: uuid.UUID = Path(
+        ...,
+        description="ID único do cliente no formato UUID",
+        example="123e4567-e89b-12d3-a456-426614174000"
+    ),
     cliente_logado: Cliente = Depends(obter_cliente_logado)
 ) -> Cliente:
     """
