@@ -72,9 +72,10 @@ async def adicionar_favorito(
     """
     Adiciona um novo produto à lista de favoritos de um cliente.
     """
+    cliente_id_str = str(cliente.id)
     logger.info(
         "Iniciando adição de produto aos favoritos",
-        client_id=cliente.id,
+        client_id=cliente_id_str,
         produto_id=produto_id
     )
     produto_existe = await cliente_api_produtos.verificar_existencia_produto(produto_id)
@@ -97,7 +98,7 @@ async def adicionar_favorito(
         await db.refresh(novo_favorito)
         logger.info(
             "Produto adicionado aos favoritos com sucesso",
-            client_id=cliente.id,
+            client_id=cliente_id_str,
             produto_id=produto_id
         )
         return novo_favorito
@@ -105,7 +106,7 @@ async def adicionar_favorito(
         await db.rollback()
         logger.warn(
             "Erro ao adicionar favorito: produto já existe na lista",
-            client_id=cliente.id,
+            client_id=cliente_id_str,
             produto_id=produto_id
         )
         raise HTTPException(

@@ -1,4 +1,5 @@
 import uuid
+
 from jose import jwt
 
 from app.core import security

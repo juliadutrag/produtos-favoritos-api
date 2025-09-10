@@ -1,4 +1,6 @@
+import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Cliente
 
@@ -45,7 +47,19 @@ def test_atualizar_cliente_sucesso(client: TestClient, test_cliente: Cliente, au
     assert data["nome"] == "Nome Atualizado"
     assert data["email"] == "email.atualizado@exemplo.com"
 
-def test_excluir_cliente_sucesso(client: TestClient, test_cliente: Cliente, auth_headers: dict):
+@pytest.mark.asyncio
+async def test_excluir_cliente_sucesso(
+    client: TestClient,
+    test_cliente: Cliente,
+    auth_headers: dict,
+    db_session: AsyncSession
+):
     """Testa a exclusão bem-sucedida da própria conta."""
     response = client.delete(f"/api/v1/clientes/{test_cliente.id}", headers=auth_headers)
     assert response.status_code == 204
+
+    await db_session.refresh(test_cliente)
+    assert test_cliente.deleted_at is not None
+
+    response_depois = client.get(f"/api/v1/clientes/{test_cliente.id}", headers=auth_headers)
+    assert response_depois.status_code == 401

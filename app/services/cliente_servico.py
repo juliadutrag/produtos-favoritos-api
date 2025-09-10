@@ -2,6 +2,7 @@ import uuid
 
 import structlog
 from fastapi import HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -42,7 +43,9 @@ async def criar_cliente(db: AsyncSession, cliente_cadastrar: ClienteCadastrar) -
 async def recuperar_cliente(db: AsyncSession, id: uuid.UUID) -> Cliente | None:
     """Busca um cliente pelo seu ID."""
     logger.debug("Buscando cliente por ID", cliente_id=id)
-    resultado = await db.execute(select(Cliente).filter(Cliente.id == id))
+    resultado = await db.execute(
+        select(Cliente).filter(Cliente.id == id, Cliente.deleted_at.is_(None))
+    )
     cliente = resultado.scalars().first()
     if cliente:
         logger.debug("Cliente encontrado por ID", cliente_id=id)
@@ -53,7 +56,9 @@ async def recuperar_cliente(db: AsyncSession, id: uuid.UUID) -> Cliente | None:
 async def recuperar_cliente_por_email(db: AsyncSession, email: str) -> Cliente | None:
     """Busca um cliente pelo seu email."""
     logger.debug("Buscando cliente por e-mail")
-    result = await db.execute(select(Cliente).filter(Cliente.email == email))
+    result = await db.execute(
+        select(Cliente).filter(Cliente.email == email, Cliente.deleted_at.is_(None))
+    )
     cliente = result.scalars().first()
 
     if cliente:
@@ -80,6 +85,17 @@ async def atualizar_cliente(
         await db.refresh(cliente)
         logger.info("Cliente atualizado com sucesso", cliente_id=cliente_id)
         return cliente
+    except IntegrityError as err:
+        await db.rollback()
+        logger.warn(
+            "Tentativa de atualizar cliente para e-mail já em uso",
+            cliente_id=cliente_id,
+            email=cliente_atualizar.email
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="O e-mail fornecido já está em uso por outro cliente.",
+        ) from err
     except SQLAlchemyError as err:
         await db.rollback()
         logger.error(
@@ -94,7 +110,7 @@ async def atualizar_cliente(
 
 
 async def excluir_cliente(db: AsyncSession, cliente: Cliente):
-    """Exclui um cliente."""
+    """Exclui logicamente um cliente."""
     cliente_id = str(cliente.id)
     logger.info(
         "Iniciando exclusão de cliente",
@@ -102,8 +118,10 @@ async def excluir_cliente(db: AsyncSession, cliente: Cliente):
     )
 
     try:
-        await db.delete(cliente)
+        cliente.deleted_at = func.now()
+        db.add(cliente)
         await db.commit()
+
         logger.info(
             "Cliente excluído com sucesso",
             cliente_id=cliente_id
