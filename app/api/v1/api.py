@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from app.api.v1.rotas import cliente_api, autenticacao_api, produto_favorito_api, healthcheck_api
+
+from app.api.v1.rotas import autenticacao_api, cliente_api, healthcheck_api, produto_favorito_api
 
 api_router = APIRouter()
 api_router.include_router(healthcheck_api.router, prefix="/healthcheck", tags=["Health Check"])

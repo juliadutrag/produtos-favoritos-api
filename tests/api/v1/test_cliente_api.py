@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
+
 from app.db.models import Cliente
+
 
 def test_criar_cliente_sucesso(client: TestClient):
     """Testa a criação de um novo cliente."""

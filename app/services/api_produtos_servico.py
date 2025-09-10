@@ -1,8 +1,10 @@
+from typing import Any
+
 import httpx
 from fastapi import HTTPException, status
-from typing import Dict, Any
 
 from app.core.config import settings
+
 
 class ClienteApiProdutos:
     """
@@ -11,7 +13,7 @@ class ClienteApiProdutos:
     def __init__(self):
         self.url_base = f"{settings.URL_BASE_API_PRODUTO}/products"
 
-    async def obter_detalhes_produto(self, id_produto: str) -> Dict[str, Any] | None:
+    async def obter_detalhes_produto(self, id_produto: str) -> dict[str, Any] | None:
         """
         Busca os detalhes de um produto específico na API externa.
         Retorna um dicionário com os dados do produto ou None se não for encontrado.
@@ -31,8 +33,8 @@ class ClienteApiProdutos:
                 print(f"Erro de comunicação com a API de produtos: {exc}")
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail=f"O serviço externo de produtos está indisponível."
-                )
+                    detail="O serviço externo de produtos está indisponível."
+                ) from exc
         return None
 
     async def verificar_existencia_produto(self, id_produto: str) -> bool:

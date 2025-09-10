@@ -2,6 +2,7 @@ from jose import jwt
 
 from app.core import security
 
+
 def test_gerar_e_verificar_senha():
     """
     Testa se a geração de hash e a verificação de senha funcionam em conjunto.
@@ -23,8 +24,8 @@ def test_gerar_token_jwt(mocker):
     token = security.gerar_token(email=email_teste)
 
     payload = jwt.decode(
-        token, 
-        "chave_secreta_para_testes", 
+        token,
+        "chave_secreta_para_testes",
         algorithms=[security.ALGORITHM]
     )
 

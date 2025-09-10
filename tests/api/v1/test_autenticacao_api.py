@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
+
 from app.db.models import Cliente
+
 
 def test_login_sucesso(client: TestClient, test_cliente: Cliente):
     """Testa o login com credenciais válidas."""

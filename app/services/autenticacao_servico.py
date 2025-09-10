@@ -1,7 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.security import gerar_token, verificar_senha
 from app.db.models import Cliente
-from app.core.security import verificar_senha, gerar_token
 from app.services import cliente_servico
+
 
 async def autenticar_cliente(db: AsyncSession, email: str, password: str) -> Cliente | None:
     """

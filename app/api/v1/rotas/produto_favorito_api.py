@@ -2,13 +2,13 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.rotas.autenticacao_api import obter_cliente_autorizado
+from app.db.models import Cliente
 from app.db.session import get_db
-from app.db.models import Cliente 
 from app.schemas.paginacao_schema import RespostaPaginada
 from app.schemas.produto_favorito_schema import ProdutoFavoritoAdicionar
 from app.schemas.produto_schema import ProdutoSchema
 from app.services import produto_favorito_servico
-from app.services.api_produtos_servico import obter_cliente_api_produtos, ClienteApiProdutos
+from app.services.api_produtos_servico import ClienteApiProdutos, obter_cliente_api_produtos
 
 router = APIRouter()
 

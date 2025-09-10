@@ -1,10 +1,10 @@
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel
 
 T = TypeVar('T')
 
-class RespostaPaginada(BaseModel, Generic[T]):
+class RespostaPaginada[T](BaseModel):
     itens: list[T]
     total: int
     pagina: int

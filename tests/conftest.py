@@ -1,17 +1,17 @@
+import uuid
+from collections.abc import AsyncGenerator
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
 import pytest_asyncio
-from typing import AsyncGenerator
-from unittest.mock import AsyncMock, MagicMock
-import uuid
-
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
+from app.core import security
 from app.db.models import Base, Cliente, ProdutoFavorito
 from app.db.session import get_db
 from app.main import app
-from app.core import security
 from app.services.api_produtos_servico import ClienteApiProdutos, obter_cliente_api_produtos
 
 DATABASE_URL_TESTE = "sqlite+aiosqlite:///:memory:"
@@ -27,7 +27,7 @@ async def db_engine():
     yield engine_test
 
 @pytest_asyncio.fixture(scope="function")
-async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
+async def db_session(db_engine) -> AsyncGenerator[AsyncSession]:
     """Cria uma nova sessão de banco de dados para cada função de teste."""
     async with engine_test.begin() as connection:
         await connection.begin_nested()
@@ -43,7 +43,7 @@ def sobrescrever_dependencias(db_session: AsyncSession, mock_cliente_api_produto
     """
     Sobrescreve as dependências da aplicação para os testes.
     """
-    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+    async def override_get_db() -> AsyncGenerator[AsyncSession]:
         yield db_session
 
     def override_get_cliente_api_produtos() -> ClienteApiProdutos:
@@ -51,9 +51,9 @@ def sobrescrever_dependencias(db_session: AsyncSession, mock_cliente_api_produto
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[obter_cliente_api_produtos] = override_get_cliente_api_produtos
-    
+
     yield
-    
+
     app.dependency_overrides.clear()
 
 
@@ -79,7 +79,7 @@ async def test_cliente(db_session: AsyncSession) -> Cliente:
         "email": "teste@exemplo.com",
         "senha": "senha_teste"
     }
-    
+
     hash_senha = security.gerar_hash_senha(cliente_data["senha"])
     novo_cliente = Cliente(
         nome=cliente_data["nome"],

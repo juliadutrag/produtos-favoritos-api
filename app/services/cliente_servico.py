@@ -1,12 +1,14 @@
 import uuid
+
+from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.exc import IntegrityError
-from fastapi import HTTPException, status
 
 from app.core.security import gerar_hash_senha
 from app.db.models import Cliente
-from app.schemas.cliente_schema import ClienteCadastrar, ClienteAtualizar
+from app.schemas.cliente_schema import ClienteAtualizar, ClienteCadastrar
+
 
 async def criar_cliente(db: AsyncSession, cliente_cadastrar: ClienteCadastrar) -> Cliente:
     """Cria um novo cliente no banco de dados."""
@@ -21,12 +23,12 @@ async def criar_cliente(db: AsyncSession, cliente_cadastrar: ClienteCadastrar) -
         await db.commit()
         await db.refresh(cliente)
         return cliente
-    except IntegrityError:
+    except IntegrityError as err:
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe um cliente registrado com o e-mail fornecido.",
-        )
+        ) from err
 
 async def recuperar_cliente(db: AsyncSession, id: uuid.UUID) -> Cliente | None:
     """Busca um cliente pelo seu ID."""

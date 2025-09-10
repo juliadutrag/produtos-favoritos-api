@@ -1,14 +1,15 @@
 import asyncio
-from typing import List, Tuple
+
+from fastapi import HTTPException, status
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.exc import IntegrityError
-from fastapi import HTTPException, status
 
-from app.db.models import ProdutoFavorito, Cliente
+from app.db.models import Cliente, ProdutoFavorito
 from app.schemas.produto_schema import ProdutoSchema
 from app.services.api_produtos_servico import ClienteApiProdutos
+
 
 async def listar_favoritos(
     db: AsyncSession,
@@ -16,7 +17,7 @@ async def listar_favoritos(
     cliente_api_produtos: ClienteApiProdutos,
     pagina: int,
     tamanho: int
-) -> Tuple[List[ProdutoSchema], int]:
+) -> tuple[list[ProdutoSchema], int]:
     """
     Busca os favoritos do cliente de forma paginada.
     """
@@ -43,7 +44,9 @@ async def listar_favoritos(
     if not ids_produtos_favoritos:
         return [], total_favoritos
 
-    tarefas_produtos = [cliente_api_produtos.obter_detalhes_produto(id_produto) for id_produto in ids_produtos_favoritos]
+    tarefas_produtos = [
+        cliente_api_produtos.obter_detalhes_produto(id_produto) for id_produto in ids_produtos_favoritos
+    ]
     resultados_produtos = await asyncio.gather(*tarefas_produtos)
     produtos_detalhados = [produto for produto in resultados_produtos if produto is not None]
 
@@ -72,12 +75,12 @@ async def adicionar_favorito(
         await db.commit()
         await db.refresh(novo_favorito)
         return novo_favorito
-    except IntegrityError:
+    except IntegrityError as err:
         await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Este produto já está na lista de favoritos do cliente.",
-        )
+        ) from err
 
 async def remover_favorito(db: AsyncSession, cliente: Cliente, produto_id: str):
     """

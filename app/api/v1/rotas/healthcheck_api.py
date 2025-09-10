@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, status
-from fastapi.responses import JSONResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
 import time
 
-from app.db.session import get_db
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.v1.openapi_docs import health_check_responses
+from app.db.session import get_db
 
 router = APIRouter()
 
@@ -47,6 +48,6 @@ async def health_check(
         }
     }
 
-    status_code = status.HTTP_200_OK if app_status is "ok" else status.HTTP_503_SERVICE_UNAVAILABLE
+    status_code = status.HTTP_200_OK if app_status == "ok" else status.HTTP_503_SERVICE_UNAVAILABLE
 
     return JSONResponse(content=response_content, status_code=status_code)

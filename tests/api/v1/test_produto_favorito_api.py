@@ -1,14 +1,20 @@
-from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock
+
+from fastapi.testclient import TestClient
 
 from app.db.models import Cliente
 
 PRODUTO_ID_TESTE = "1bf0f365-fbdd-4e21-9746-da27342207a9"
 
-def test_adicionar_favorito_sucesso(client: TestClient, test_cliente: Cliente, auth_headers: dict, mock_cliente_api_produtos):
+def test_adicionar_favorito_sucesso(
+    client: TestClient,
+    test_cliente: Cliente,
+    auth_headers: dict,
+    mock_cliente_api_produtos
+):
     """Testa adicionar um produto aos favoritos com sucesso."""
     mock_cliente_api_produtos.verificar_existencia_produto.return_value = True
-    
+
     response = client.post(
         f"/api/v1/clientes/{test_cliente.id}/favoritos/",
         headers=auth_headers,
@@ -17,7 +23,12 @@ def test_adicionar_favorito_sucesso(client: TestClient, test_cliente: Cliente, a
     assert response.status_code == 201
     assert response.json() == {"message": "Produto adicionado aos favoritos com sucesso."}
 
-def test_adicionar_favorito_produto_inexistente(client: TestClient, test_cliente: Cliente, auth_headers: dict, mock_cliente_api_produtos):
+def test_adicionar_favorito_produto_inexistente(
+    client: TestClient,
+    test_cliente: Cliente,
+    auth_headers: dict,
+    mock_cliente_api_produtos
+):
     """Testa adicionar um produto que não existe na API externa."""
     mock_cliente_api_produtos.verificar_existencia_produto.return_value = False
 

@@ -1,6 +1,8 @@
 import uuid
-from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+
 
 class ClienteDadosBasicos(BaseModel):
     email: EmailStr
