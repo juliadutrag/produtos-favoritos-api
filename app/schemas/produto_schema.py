@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, HttpUrl, ConfigDict
 
 class ProdutoSchema(BaseModel):
@@ -6,6 +7,6 @@ class ProdutoSchema(BaseModel):
     brand: str
     image: HttpUrl
     price: float
-    reviewScore: float
+    reviewScore: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
