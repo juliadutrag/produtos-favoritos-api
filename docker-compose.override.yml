@@ -21,7 +21,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     container_name: produtos_favoritos_api_dev
-    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --no-access-log
     volumes:
       - .:/code
     env_file:

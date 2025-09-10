@@ -1,5 +1,6 @@
 import uuid
 
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -14,6 +15,8 @@ from app.services import autenticacao_servico, cliente_servico
 oauth2_schema = OAuth2PasswordBearer(tokenUrl="api/v1/auth/token")
 router = APIRouter()
 
+logger = structlog.get_logger(__name__)
+
 @router.post("/token")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
@@ -22,16 +25,22 @@ async def login(
     """
     Autentica o cliente e retorna um token de acesso JWT.
     """
+    username = form_data.username
+
+    logger.info("Tentativa de login recebida", username=username)
+
     token = await autenticacao_servico.autenticar_cliente(
-        db, email=form_data.username, password=form_data.password
+        db, email=username, password=form_data.password
     )
     if not token:
+        logger.warn("Falha na autenticação", username=username, reason="Credenciais inválidas")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="E-mail ou senha inválidos",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    logger.info("Login bem-sucedido", username=username)
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -72,6 +81,11 @@ async def obter_cliente_autorizado(
     4. Retorna o objeto do usuário se a verificação passar.
     """
     if id != cliente_logado.id:
+        logger.warn(
+            "Acesso não autorizado a recurso",
+            logged_in_client_id=cliente_logado.id,
+            target_resource_client_id=id
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Não tem permissão para realizar esta ação neste recurso.",
