@@ -17,6 +17,9 @@ services:
       retries: 5
 
   api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     container_name: produtos_favoritos_api_dev
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
