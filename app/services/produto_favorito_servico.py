@@ -1,5 +1,6 @@
 import asyncio
-from typing import List
+from typing import List, Tuple
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
@@ -13,23 +14,40 @@ async def listar_favoritos(
     db: AsyncSession,
     cliente: Cliente,
     cliente_api_produtos: ClienteApiProdutos,
-) -> List[ProdutoSchema]:
+    pagina: int,
+    tamanho: int
+) -> Tuple[List[ProdutoSchema], int]:
     """
-    Busca os IDs dos produtos favoritos do cliente no banco e os enriquece
-    com os dados da API externa.
+    Busca os favoritos do cliente de forma paginada.
     """
-    consulta = select(ProdutoFavorito.produto_id).where(ProdutoFavorito.cliente_id == cliente.id)
+    count = (
+        select(func.count(ProdutoFavorito.produto_id))
+        .where(ProdutoFavorito.cliente_id == cliente.id)
+    )
+    resultado_count = await db.execute(count)
+    total_favoritos = resultado_count.scalar_one()
+
+    if total_favoritos == 0:
+        return [], 0
+
+    offset = (pagina - 1) * tamanho
+    consulta = (
+        select(ProdutoFavorito.produto_id)
+        .where(ProdutoFavorito.cliente_id == cliente.id)
+        .offset(offset)
+        .limit(tamanho)
+    )
     resultado = await db.execute(consulta)
     ids_produtos_favoritos = resultado.scalars().all()
 
     if not ids_produtos_favoritos:
-        return []
+        return [], total_favoritos
 
     tarefas_produtos = [cliente_api_produtos.obter_detalhes_produto(id_produto) for id_produto in ids_produtos_favoritos]
     resultados_produtos = await asyncio.gather(*tarefas_produtos)
     produtos_detalhados = [produto for produto in resultados_produtos if produto is not None]
 
-    return produtos_detalhados
+    return produtos_detalhados, total_favoritos
 
 async def adicionar_favorito(
     db: AsyncSession,

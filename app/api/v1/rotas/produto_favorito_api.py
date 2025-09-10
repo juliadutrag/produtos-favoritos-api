@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, status, Response
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 
 from app.api.v1.rotas.autenticacao_api import obter_cliente_autorizado
 from app.db.session import get_db
 from app.db.models import Cliente 
+from app.schemas.paginacao_schema import RespostaPaginada
 from app.schemas.produto_favorito_schema import ProdutoFavoritoAdicionar
 from app.schemas.produto_schema import ProdutoSchema
 from app.services import produto_favorito_servico
@@ -14,20 +14,28 @@ router = APIRouter()
 
 @router.get(
     "/",
-    response_model=List[ProdutoSchema],
+    response_model=RespostaPaginada[ProdutoSchema],
     summary="Listar produtos favoritos de um cliente"
 )
 async def listar_produtos_favoritos(
     cliente_autorizado: Cliente = Depends(obter_cliente_autorizado),
     db: AsyncSession = Depends(get_db),
-    cliente_api_produtos: ClienteApiProdutos = Depends(obter_cliente_api_produtos)
+    cliente_api_produtos: ClienteApiProdutos = Depends(obter_cliente_api_produtos),
+    pagina: int = Query(1, ge=1, description="Número da página"),
+    tamanho: int = Query(10, ge=1, le=100, description="Itens por página")
 ):
     """
     Retorna a lista de produtos favoritos de um cliente.
     """
-    return await produto_favorito_servico.listar_favoritos(
-        db=db, cliente=cliente_autorizado, cliente_api_produtos=cliente_api_produtos
+    produtos, total = await produto_favorito_servico.listar_favoritos(
+        db=db,
+        cliente=cliente_autorizado,
+        cliente_api_produtos=cliente_api_produtos,
+        pagina=pagina,
+        tamanho=tamanho
     )
+    return RespostaPaginada(itens=produtos, total=total, pagina=pagina, tamanho=tamanho)
+
 
 @router.post(
     "/",

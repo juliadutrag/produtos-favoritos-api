@@ -13,10 +13,15 @@ async def test_listar_favoritos_com_sucesso():
     
     mock_db = AsyncMock()
     ids_produtos_favoritos = ["id_produto_1", "id_produto_2"]
+    total_de_favoritos = 2
+
+    mock_resultado_count = MagicMock()
+    mock_resultado_count.scalar_one.return_value = total_de_favoritos
     
-    mock_resultado_db = MagicMock()
-    mock_resultado_db.scalars.return_value.all.return_value = ids_produtos_favoritos
-    mock_db.execute.return_value = mock_resultado_db
+    mock_resultado_select = MagicMock()
+    mock_resultado_select.scalars.return_value.all.return_value = ids_produtos_favoritos
+
+    mock_db.execute.side_effect = [mock_resultado_count, mock_resultado_select]
     
     mock_api_produtos = AsyncMock()
     produto_detalhado_1 = {"ID": "id_produto_1", "title": "Produto 1"}
@@ -27,15 +32,18 @@ async def test_listar_favoritos_com_sucesso():
         produto_detalhado_2,
     ]
 
-    resultado = await produto_favorito_servico.listar_favoritos(
+    produtos, total = await produto_favorito_servico.listar_favoritos(
         db=mock_db,
         cliente=mock_cliente,
-        cliente_api_produtos=mock_api_produtos
+        cliente_api_produtos=mock_api_produtos,
+        pagina=1,
+        tamanho=10
     )
 
-    assert len(resultado) == 2
-    assert resultado[0]["title"] == "Produto 1"
-    assert resultado[1]["title"] == "Produto 2"
+    assert total == total_de_favoritos
+    assert len(produtos) == 2
+    assert produtos[0]["title"] == "Produto 1"
+    assert produtos[1]["title"] == "Produto 2"
     
     assert mock_api_produtos.obter_detalhes_produto.call_count == 2
     mock_api_produtos.obter_detalhes_produto.assert_any_call("id_produto_1")
@@ -52,15 +60,21 @@ async def test_listar_favoritos_quando_cliente_nao_tem_favoritos():
     mock_db = AsyncMock()
     mock_api_produtos = AsyncMock()
 
-    mock_resultado_db = MagicMock()
-    mock_resultado_db.scalars.return_value.all.return_value = []
-    mock_db.execute.return_value = mock_resultado_db
-    
-    resultado = await produto_favorito_servico.listar_favoritos(
-        db=mock_db, cliente=mock_cliente, cliente_api_produtos=mock_api_produtos
+    mock_resultado_count = MagicMock()
+    mock_resultado_count.scalar_one.return_value = 0
+    mock_db.execute.return_value = mock_resultado_count
+
+    produtos, total = await produto_favorito_servico.listar_favoritos(
+        db=mock_db,
+        cliente=mock_cliente,
+        cliente_api_produtos=mock_api_produtos,
+        tamanho=10,
+        pagina=1
     )
 
-    assert resultado == []
+    assert produtos == []
+    assert total == 0
+
     mock_api_produtos.obter_detalhes_produto.assert_not_called()
 
 
@@ -73,10 +87,14 @@ async def test_listar_favoritos_quando_api_externa_falha_para_um_produto():
     mock_cliente.id = "id_cliente_teste"
     mock_db = AsyncMock()
     ids_produtos_favoritos = ["id_produto_1", "id_produto_nao_encontrado"]
+
+    mock_resultado_count = MagicMock()
+    mock_resultado_count.scalar_one.return_value = 2
+
+    mock_resultado_select = MagicMock()
+    mock_resultado_select.scalars.return_value.all.return_value = ids_produtos_favoritos
     
-    mock_resultado_db = MagicMock()
-    mock_resultado_db.scalars.return_value.all.return_value = ids_produtos_favoritos
-    mock_db.execute.return_value = mock_resultado_db
+    mock_db.execute.side_effect = [mock_resultado_count, mock_resultado_select]
     
     mock_api_produtos = AsyncMock()
     produto_detalhado_1 = {"ID": "id_produto_1", "title": "Produto 1"}
@@ -86,10 +104,15 @@ async def test_listar_favoritos_quando_api_externa_falha_para_um_produto():
         None,
     ]
     
-    resultado = await produto_favorito_servico.listar_favoritos(
-        db=mock_db, cliente=mock_cliente, cliente_api_produtos=mock_api_produtos
+    produtos, total = await produto_favorito_servico.listar_favoritos(
+        db=mock_db,
+        cliente=mock_cliente,
+        cliente_api_produtos=mock_api_produtos,
+        pagina=1,
+        tamanho=10
     )
     
-    assert len(resultado) == 1
-    assert resultado[0]["title"] == "Produto 1"
+    assert total == 2
+    assert len(produtos) == 1
+    assert produtos[0]["title"] == "Produto 1"
     assert mock_api_produtos.obter_detalhes_produto.call_count == 2
