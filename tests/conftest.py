@@ -92,9 +92,8 @@ async def test_cliente(db_session: AsyncSession) -> Cliente:
     await db_session.refresh(novo_cliente)
     return novo_cliente
 
-
 @pytest.fixture(scope="function")
 def auth_headers(test_cliente: Cliente) -> dict[str, str]:
     """Gera um token JWT válido e retorna o cabeçalho de autorização."""
-    token = security.gerar_token(test_cliente.email)
+    token = security.gerar_token(subject=str(test_cliente.id))
     return {"Authorization": f"Bearer {token}"}

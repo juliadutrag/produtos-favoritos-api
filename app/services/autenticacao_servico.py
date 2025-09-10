@@ -15,4 +15,4 @@ async def autenticar_cliente(db: AsyncSession, email: str, password: str) -> Cli
     if not cliente or not verificar_senha(password, cliente.hash_senha):
         return None
 
-    return gerar_token(cliente.email)
+    return gerar_token(subject=str(cliente.id))

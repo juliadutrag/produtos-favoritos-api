@@ -1,3 +1,4 @@
+import uuid
 from jose import jwt
 
 from app.core import security
@@ -20,8 +21,8 @@ def test_gerar_token_jwt(mocker):
     mocker.patch("app.core.security.settings.CHAVE_SEGURANCA_JWT", "chave_secreta_para_testes")
     mocker.patch("app.core.security.settings.TEMPO_EXPIRACAO_TOKEN_MINUTOS", 15)
 
-    email_teste = "teste@exemplo.com"
-    token = security.gerar_token(email=email_teste)
+    id_teste = str(uuid.uuid4())
+    token = security.gerar_token(subject=id_teste)
 
     payload = jwt.decode(
         token,
@@ -29,5 +30,5 @@ def test_gerar_token_jwt(mocker):
         algorithms=[security.ALGORITHM]
     )
 
-    assert payload.get("sub") == email_teste
+    assert payload.get("sub") == id_teste
     assert "exp" in payload

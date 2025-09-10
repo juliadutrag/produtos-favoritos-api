@@ -58,13 +58,19 @@ async def obter_cliente_logado(
     )
     try:
         payload = jwt.decode(token, settings.CHAVE_SEGURANCA_JWT, algorithms=[security.ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        id_cliente_str: str | None = payload.get("sub")
+
+        if id_cliente_str is None:
             raise credentials_exception
+
+        try:
+            id_cliente = uuid.UUID(id_cliente_str)
+        except ValueError as value_error:
+            raise credentials_exception from value_error
     except JWTError as err:
         raise credentials_exception from err
 
-    cliente = await cliente_servico.recuperar_cliente_por_email(db, email=email)
+    cliente = await cliente_servico.recuperar_cliente(db, id=id_cliente)
     if cliente is None:
         raise credentials_exception
     return cliente

@@ -16,7 +16,7 @@ def gerar_hash_senha(senha: str) -> str:
     """Gera o hash de uma senha."""
     return pwd_context.hash(senha)
 
-def gerar_token(email: str):
+def gerar_token(subject: str):
     """Cria um novo token de acesso JWT."""
     expire = datetime.now(UTC) + timedelta(minutes=settings.TEMPO_EXPIRACAO_TOKEN_MINUTOS)
-    return jwt.encode({"sub": email, "exp": expire}, settings.CHAVE_SEGURANCA_JWT, algorithm=ALGORITHM)
+    return jwt.encode({"sub": subject, "exp": expire}, settings.CHAVE_SEGURANCA_JWT, algorithm=ALGORITHM)
